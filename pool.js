@@ -1,37 +1,39 @@
 import pg from "pg";
+const { Pool } = pg;
 
-const { Client } = pg;
 const config = {
     host: "localhost",
     port: 5432,
     database: "m7_d1_ejercicios",
     user: "node",
     password: "123456",
+    max: 5,
+    idleTimeoutMillis: 3000,
 };
+
+const pool = new Pool(config);
 
 const consulta = (query) => {
     return new Promise(async (resolve, reject) => {
-        const client = new Client(config);
+        let client;
         try {
-            await client.connect();
+            client = await pool.connect();
             const result = await client.query(query);
             resolve(result.rows);
         } catch (error) {
-            console.log(error.message);
-            reject("error al consultas los productos en la BD.");
+            reject("error al consultar los productos a la BD.");
         } finally {
             try {
-                await client.end();
-                //console.log("Se ha liberado al cliente.");
+                if (client) {
+                    client.release();
+                    console.log("Client liberado");
+                }
             } catch (error) {
-                //console.log("Error al cerrar la conexión");
+                console.error("Error al liberar el cliente:", error);
             }
         }
     });
 };
-
-//consultar todos los productos
-//consulta("SELECT id, nombre, descripcion, precio, stock FROM PRODUCTOS");
 
 const getProductsById = (id) => {
     //let query = "SELECT id, nombre, descripcion, precio, stock FROM PRODUCTOS WHERE id =" + id;
@@ -49,5 +51,6 @@ const getProductsById = (id) => {
         });
 };
 
-getProductsById("1");
 getProductsById("2");
+getProductsById("1");
+
